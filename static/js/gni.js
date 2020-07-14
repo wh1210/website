@@ -18,6 +18,7 @@ import { initMenu } from "./menu.js";
 
 import {
   drawFromChartApi,
+  drawFromChartApiV2,
   dcidToPlaceType,
   getPerCapita,
   getUrlVars,
@@ -168,7 +169,15 @@ function renderFromUrl(urlargs) {
     $("#placeholder-container").hide();
     $("#observation").show();
 
-    drawFromChartApi("observation", placeStr, ptpv ? ptpv : "Person,count");
+    placeStr = "geoId/05,geoId/06";
+    // placeStr = "geoId/06";
+    ptpv = [
+      ["Count_Person", "count"],
+      ["Count_Person_Male", "count"],
+      ["Count_Person_Female", "count"],
+    ];
+
+    drawFromChartApiV2("observation", placeStr, ptpv ? ptpv : "Person,count");
     let link = `/download#&place=${urlargs["place"]}&ptpv=${urlargs["ptpv"]}`;
     if ("pc" in urlargs && urlargs["pc"] == "1") {
       link += "&pc=1";

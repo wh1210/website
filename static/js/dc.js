@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { randDomId } from "./util";
+import { fetchStatsData } from "./data_fetcher";
+import { drawGroupLineChart } from "./chart/draw";
 
 let placeColors = {};
 let popPVLineType = {};
@@ -624,6 +627,107 @@ function drawFromChartApi(chartElem, placeIdStr, pt_pvs_mp_str) {
   }
 }
 
+// https://browser.datacommons.org/gni#&place=geoid1,geoid2,...&statsvar=statsid1,age,gender__statisid2,race__
+// TODO(haowu): Version to draw plot based on statsVars.
+//              A problem found when only having one geoId.(test usage)
+/**
+ *
+ * @param chartElem: DOM element Id.
+ * @param placeIdStr: "geoId1,geoId2,geoId3,..."
+ * @param statVarsAndMeasuredProps: [[statVar, measuredProp],...]
+ */
+function drawFromChartApiV2(chartElem, placeIdStr, statVarsAndMeasuredProps) {
+  // parse and deal with input
+  const obsElem = document.getElementById(chartElem);
+  const elem2 = document.createElement("div");
+  elem2.id = "gchart-container";
+  obsElem.appendChild(elem2);
+  let perCapita = getPerCapita();
+  console.log(statVarsAndMeasuredProps);
+
+  let width = Math.min(obsElem.offsetWidth - 20, MAX_CHART_WIDTH);
+  let height = Math.min(Math.round(width * 0.5), MAX_CHART_HEIGHT);
+
+  let placeIds = placeIdStr.split(",");
+
+  // Group the statVars by measuredProp
+  let measuredPropGroup = {};
+  for (let statVarAndMeasuredProp of statVarsAndMeasuredProps) {
+    let mprop = statVarAndMeasuredProp[1];
+    if (mprop in measuredPropGroup) {
+      measuredPropGroup[mprop].push(statVarAndMeasuredProp[0]);
+    } else {
+      measuredPropGroup[mprop] = [statVarAndMeasuredProp[0]];
+    }
+  }
+
+  console.log(measuredPropGroup);
+
+  for (let mprop in measuredPropGroup) {
+    let statsVarsArray = measuredPropGroup[mprop];
+    // draw chart directly in front-end
+    console.log(statsVarsArray);
+    fetchStatsData(placeIds, statsVarsArray, perCapita, 1).then((data) => {
+      console.log(data);
+      const card = document.createElement("div");
+      card.className = "card";
+      card.id = randDomId();
+      elem2.appendChild(card);
+
+      console.log("Test getStatsVarGroupWithTime");
+      console.log(data.getStatsVarGroupWithTime("geoId/06"));
+
+      // generate dict {geoId: DataGroup}.
+      let dataGroupsDict = {};
+      for (let geo of data.places) {
+        dataGroupsDict[geo] = data.getStatsVarGroupWithTime(geo);
+      }
+
+      let colors = drawGroupLineChart(card.id, width, height, dataGroupsDict);
+      console.log(dataGroupsDict);
+
+      showPVListV3(card, statsVarsArray, colors);
+    });
+  }
+}
+
+/**
+ * Generate legend below the chart along with the menu.
+ * @param listElem, the parent element.
+ * @param statsVars, an array of statsVars.
+ * @param colors, colors from the above chart.
+ */
+function showPVListV3(listElem, statsVars, colors) {
+  if (statsVars.length > 0) {
+    let ind = 0;
+    console.log(statsVars);
+    console.log(statsVars.length);
+    for (const statsVar of statsVars) {
+      let elem = document.createElement("div");
+      listElem.appendChild(elem);
+      elem.classList.add("pv-chip");
+      elem.classList.add("mdl-chip--deletable");
+      // TODO: get the same colors.
+      elem.style.backgroundColor = colors[ind];
+      const text = document.createElement("span");
+      text.classList.add("mdl-chip__text");
+      let legend = statsVar;
+      text.innerHTML = legend;
+      elem.appendChild(text);
+      const button = document.createElement("button");
+      button.classList.add("mdl-chip__action");
+      const cancel = document.createElement("i");
+      cancel.classList.add("material-icons");
+      cancel.innerHTML = "cancel";
+      button.appendChild(cancel);
+      elem.appendChild(button);
+      elem.appendChild(document.createElement("br"));
+      cancel.addEventListener("click", () => removePVTFromUrl(ptpv["urlarg"]));
+      ind++;
+    }
+  }
+}
+
 function showPVListV2(listElem, ptpvGroup) {
   if (ptpvGroup.length > 0) {
     let ind = 0;
@@ -737,6 +841,7 @@ function clearDiv(id) {
 
 export {
   drawFromChartApi,
+  drawFromChartApiV2,
   dcidToPlaceType,
   getPerCapita,
   getUrlVars,

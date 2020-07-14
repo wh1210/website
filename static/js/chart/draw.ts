@@ -496,6 +496,8 @@ interface PlotParams {
  * @param dataGroupsDict
  */
 function computePlotParams(dataGroupsDict: { [geoId: string]: DataGroup[] }) {
+  console.log("Test compute params");
+  console.log(dataGroupsDict);
   let plotParams: PlotParams;
   plotParams = {
     colors: [],
@@ -579,6 +581,7 @@ function drawGroupLineChart(
 ) {
   // Get all styles.
   let plotParams = computePlotParams(dataGroupsDict);
+  console.log(plotParams);
 
   let dataGroups: DataGroup[];
   dataGroups = Object.values(dataGroupsDict)[0];

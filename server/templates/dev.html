@@ -17,9 +17,10 @@
 {% extends 'base.html' %}
 
 {% block head %}
-  <script src={{url_for('static', filename='dev.js', t=config['GAE_VERSION'])}}></script>
+  <script src={{url_for('static', filename='dev.ts', t=config['GAE_VERSION'])}}></script>
   <link rel="stylesheet" href={{url_for('static', filename='css/draw.css')}}></script>
   <link rel="stylesheet" href={{url_for('static', filename='css/dev.css')}}></script>
+  <link rel="stylesheet" href={{url_for('static', filename='css/gni.css')}}></script>
   <style>
     .chart {
       margin: 20px;
